@@ -1,8 +1,8 @@
 # ADR-001: Split the system into four services behind an API gateway
 
 Date: 2026-11-02
-Deciders: Fatimah Alotaibi, Ghadah Alsuhaibani, Mashael Aldughayem,
-Rahaf Alsahli, Sarah Alothman
+Deciders: development team { Fatimah Alotaibi, Ghadah Alsuhaibani, Mashael Aldughayem,
+Rahaf Alsahli, Sarah Alothman }
 
 ## Context
 
