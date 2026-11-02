@@ -1,0 +1,127 @@
+
+' Smart Parking Management System - Container Diagram
+@startuml containers
+
+' Load the C4 shapes for a Level 2 container diagram.
+!include <C4/C4_Container>
+
+' Diagram title.
+title Smart Parking Management System - Containers (C4 Level 2)
+
+' Display a legend explaining the diagram.
+LAYOUT_WITH_LEGEND()
+
+' Define the people who interact with the system.
+Person(driver, "Driver", "Searches for available parking spaces and makes reservations")
+Person(parking_admin, "Parking Administrator", "Manages parking facilities, spaces, and pricing")
+Person(parking_staff, "Parking Staff", "Monitors parking occupancy and validates vehicle entry and exit")
+
+' Define the main system boundary.
+System_Boundary(parking_system, "Smart Parking Management System") {
+
+    ' Frontend application.
+    Container(frontend, "Web Application", "Angular", "Provides the user interface for drivers, administrators, and parking staff.")
+
+    ' API Gateway.
+    Container(gateway, "API Gateway", "Spring Cloud Gateway", "Single entry point for frontend requests. Handles routing, authentication, and request filtering.")
+
+    ' Backend microservices.
+    Container(user_service, "User Service", "Spring Boot", "Manages user registration, authentication, authorization, and user profiles.")
+
+    Container(parking_service, "Parking Service", "Spring Boot", "Manages parking facilities, parking spaces, availability, and occupancy information.")
+
+    Container(reservation_service, "Reservation Service", "Spring Boot", "Handles parking reservations, cancellations, expiration, and booking conflict prevention.")
+
+    Container(payment_service, "Payment Service", "Spring Boot", "Processes parking payments, refunds, and payment transaction records.")
+
+    ' Databases owned by individual services.
+    ContainerDb(user_db, "User Database", "PostgreSQL", "Stores user accounts, credentials, and roles.")
+
+    ContainerDb(parking_db, "Parking Database", "PostgreSQL", "Stores parking facilities, spaces, pricing, and occupancy information.")
+
+    ContainerDb(reservation_db, "Reservation Database", "PostgreSQL", "Stores reservations, booking periods, and reservation statuses.")
+
+    ContainerDb(payment_db, "Payment Database", "PostgreSQL", "Stores payment transactions and payment statuses.")
+
+    ' Infrastructure components.
+    ContainerQueue(message_broker, "Message Broker", "RabbitMQ", "Enables asynchronous communication between services using business events.")
+
+    ContainerDb(redis, "Redis Cache", "Redis", "Caches frequently accessed parking availability and other temporary data.")
+
+    ' Real-time communication.
+    Container(websocket, "WebSocket Handler", "Spring Boot", "Pushes real-time parking availability updates to connected frontend clients.")
+}
+
+' External systems.
+System_Ext(payment_gateway, "External Payment Gateway", "Processes card payments and refunds.")
+
+System_Ext(notification_provider, "Notification Provider", "Sends SMS and email notifications.")
+
+System_Ext(parking_sensors, "Parking Sensors / IoT System", "Reports real-time parking space occupancy.")
+
+System_Ext(mapping_service, "Mapping Service", "Provides maps, location information, and navigation.")
+
+' User interactions.
+Rel(driver, frontend, "Searches for parking and manages reservations", "HTTPS")
+
+Rel(parking_admin, frontend, "Manages parking facilities and pricing", "HTTPS")
+
+Rel(parking_staff, frontend, "Monitors parking occupancy and validates entry/exit", "HTTPS")
+
+' Frontend and gateway communication.
+Rel(frontend, gateway, "Sends API requests", "HTTPS / REST")
+
+' Gateway routing.
+Rel(gateway, user_service, "Routes authentication and user requests", "HTTP / REST")
+
+Rel(gateway, parking_service, "Routes parking and availability requests", "HTTP / REST")
+
+Rel(gateway, reservation_service, "Routes reservation requests", "HTTP / REST")
+
+Rel(gateway, payment_service, "Routes payment requests", "HTTP / REST")
+
+' Service database interactions.
+Rel(user_service, user_db, "Reads and writes user data", "JDBC")
+
+Rel(parking_service, parking_db, "Reads and writes parking data", "JDBC")
+
+Rel(reservation_service, reservation_db, "Reads and writes reservation data", "JDBC")
+
+Rel(payment_service, payment_db, "Reads and writes payment data", "JDBC")
+
+' Inter-service synchronous communication.
+Rel(reservation_service, parking_service, "Checks parking availability", "HTTP / REST")
+
+Rel(reservation_service, payment_service, "Initiates payment", "HTTP / REST")
+
+' Asynchronous communication.
+Rel(parking_service, message_broker, "Publishes occupancy update events", "AMQP")
+
+Rel(reservation_service, message_broker, "Publishes reservation events", "AMQP")
+
+Rel(payment_service, message_broker, "Publishes payment events", "AMQP")
+
+Rel(message_broker, parking_service, "Delivers relevant events", "AMQP")
+
+Rel(message_broker, reservation_service, "Delivers relevant events", "AMQP")
+
+' Cache interactions.
+Rel(parking_service, redis, "Caches parking availability", "Redis protocol")
+
+' Real-time updates.
+Rel(parking_service, websocket, "Sends availability updates", "HTTP / internal event")
+
+Rel(websocket, frontend, "Pushes real-time updates", "WebSocket")
+
+' External integrations.
+Rel(payment_service, payment_gateway, "Processes payments and refunds", "HTTPS / REST")
+
+Rel(payment_service, message_broker, "Publishes payment results", "AMQP")
+
+Rel(parking_service, parking_sensors, "Receives occupancy information", "MQTT / HTTP")
+
+Rel(frontend, mapping_service, "Displays parking locations and navigation", "HTTPS / REST")
+
+Rel(message_broker, notification_provider, "Triggers booking and payment notifications", "AMQP / HTTPS")
+
+@enduml
