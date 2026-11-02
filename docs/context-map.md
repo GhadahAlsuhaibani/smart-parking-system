@@ -101,7 +101,7 @@ What Billing promises to others:
 * **Pattern:** Conformist (Follower).
 * **Details:** A booking cannot become active until the payment goes through. Because banks require strict financial rules, the Reservation service must completely follow and accept (`Conformist`) the exact data schemas and payment statuses built by the Billing team.
 
-### 3. All Services ↔ Messaging Mesh (RabbitMQ)
+### 3. All Services ↔ Messaging Broker (RabbitMQ)
 * **Type:** Shared Kernel (Shared Space).
 * **Pattern:** Published Language (Standard Messages).
 * **Details:** All core services use RabbitMQ to talk to each other without being directly linked. They share simple, standard JSON messages (`Published Language`) to announce when things happen, keeping the services independent.
