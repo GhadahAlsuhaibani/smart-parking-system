@@ -56,17 +56,17 @@ What Reservation promises to others:
 
 ---
 
-## Context 4: Billing
+## Context 4: Payment
 
 Owner: Finance Team  
 Purpose: Take payments safely and track financial transactions.
 
-| Word | What it means inside Billing |
+| Word | What it means inside Payment |
 | :--- | :--- |
 | status | The official banking stage of an invoice or payment: `authorized`, `captured`, `settled`, or `refunded`. |
 | charge | The final cash amount billed to the customer, calculated using parking rates, duration, and VAT taxes. |
 
-What Billing promises to others:
+What Payment promises to others:
 * Sends a message called `PaymentCaptured` as soon as the external bank successfully charges the user's card.
 * This message always carries the `order_id`, `user_id`, `amount`, and a secure transaction token from the bank.
 
@@ -83,7 +83,7 @@ What Billing promises to others:
 ### The word `status` is the second dangerous confusion.
 * In **Parking Facility**, status means hardware sensor data (`occupied`/`available`).
 * In **Reservation**, status means a ticket lifecycle (`pending`/`expired`).
-* In **Billing**, status means a banking stage (`authorized`/`captured`).
+* In **Payment**, status means a banking stage (`authorized`/`captured`).
 
 **Rule:** To avoid confusion, developers must never say just `status`. They must explicitly say `physical bay occupancy status`, `booking contract status`, or `invoice transaction status`.
 
@@ -96,10 +96,10 @@ What Billing promises to others:
 * **Pattern:** Customer-Supplier.
 * **Details:** The Reservation service depends entirely on the layout rules and capacities owned by the Parking service. The Parking service acts as the boss (Upstream) and provides a clean API for the Reservation service to check lot limits.
 
-### 2. Reservation → Billing
-* **Type:** Downstream (Reservation) → Upstream (Billing).
+### 2. Reservation → Payment
+* **Type:** Downstream (Reservation) → Upstream (Payment).
 * **Pattern:** Conformist (Follower).
-* **Details:** A booking cannot become active until the payment goes through. Because banks require strict financial rules, the Reservation service must completely follow and accept (`Conformist`) the exact data schemas and payment statuses built by the Billing team.
+* **Details:** A booking cannot become active until the payment goes through. Because banks require strict financial rules, the Reservation service must completely follow and accept (`Conformist`) the exact data schemas and payment statuses built by the payment team.
 
 ### 3. All Services ↔ Messaging Broker (RabbitMQ)
 * **Type:** Shared Kernel (Shared Space).
