@@ -27,15 +27,15 @@ What User & Auth promises to others:
 Owner: Infrastructure & IoT Team  
 Purpose: Track the real-world parking lots and live sensor updates.
 
-| Word | What it means inside Parking Facility |
-| :--- | :--- |
-| bay | A real, physical parking spot marked on the ground with a live IoT sensor. Identified by a unique `bay_number`. |
-| status | The live, real-time sensor readout of a physical bay right now: either `available` or `occupied`. |
-| driver | An anonymous car license plate detected by physical cameras or gate barriers. |
+| Word | What it means inside Parking Facility                                                                        |
+| :--- |:-------------------------------------------------------------------------------------------------------------|
+| spot | A real, physical parking spot marked on the ground with a live IoT sensor. Identified by a unique `spot_number`. |
+| status | The live, real-time sensor readout of a physical spot right now: either `available` or `occupied`.            |
+| driver | An anonymous car license plate detected by physical cameras or gate barriers.                                |
 
 What Parking Facility promises to others:
 * Sends a message called `OccupancyUpdated` over RabbitMQ whenever a real-world sensor changes state.
-* This message always includes the `facility_id`, `bay_number`, and the current live `status`.
+* This message always includes the `facility_id`, `spot_number`, and the current live `status`.
 
 ---
 
@@ -46,7 +46,7 @@ Purpose: Handle digital bookings and prevent double-booking.
 
 | Word | What it means inside Reservation |
 | :--- | :--- |
-| booking | A digital ticket or voucher that saves a spot for a driver during a specific future time window. It does not look at a real physical bay number until the driver arrives. |
+| booking | A digital ticket or voucher that saves a spot for a driver during a specific future time window. It does not look at a real physical spot number until the driver arrives. |
 | status | The current step of the booking agreement lifecycle: `pending`, `active`, `completed`, `cancelled`, or `expired`. |
 | driver | A customer account containing booking history, loyalty tier status, and notification preferences. |
 
@@ -74,18 +74,18 @@ What Payment promises to others:
 
 ## The borders between them
 
-### The word `bay` vs. `booking` is the dangerous confusion.
+### The word `spot` vs. `booking` is the dangerous confusion.
 * In **Parking Facility**, a spot is a real piece of ground. If a car sits on it, it is occupied right now. It does not know about tomorrow.
 * In **Reservation**, a spot is a digital time slot. It can be saved for 3:00 PM tomorrow while sitting completely empty right now.
 
-**Rule:** The Reservation service never looks at the live sensor database to make a booking for next week. It only looks at its own digital ledger. When a driver arrives at the garage, Reservation asks the Parking service to pair their digital `booking` with an empty physical `bay_number`.
+**Rule:** The Reservation service never looks at the live sensor database to make a booking for next week. It only looks at its own digital ledger. When a driver arrives at the garage, Reservation asks the Parking service to pair their digital `booking` with an empty physical `spot_number`.
 
 ### The word `status` is the second dangerous confusion.
 * In **Parking Facility**, status means hardware sensor data (`occupied`/`available`).
 * In **Reservation**, status means a ticket lifecycle (`pending`/`expired`).
 * In **Payment**, status means a banking stage (`authorized`/`captured`).
 
-**Rule:** To avoid confusion, developers must never say just `status`. They must explicitly say `physical bay occupancy status`, `booking contract status`, or `invoice transaction status`.
+**Rule:** To avoid confusion, developers must never say just `status`. They must explicitly say `physical spot occupancy status`, `booking contract status`, or `invoice transaction status`.
 
 ---
 
