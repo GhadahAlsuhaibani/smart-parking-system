@@ -6,7 +6,7 @@ title Smart Parking Management System - System Context (C4 Level 1)
 Person(driver, "Driver", "Searches for available parking spaces and reserves parking")
 Person(admin, "Parking Administrator", "Manages parking facilities, spaces, and pricing")
 Person(staff, "Parking Staff", "Monitors parking occupancy and validates vehicle entry and exit")
-System_Ext(sensors, "Parking Sensors / IoT System", "Reports real-time parking space occupancy")
+Person(sensors, "Parking Sensors / IoT System", "Reports real-time parking space occupancy")
 
 System(sps, "Smart Parking System", "Helps drivers find, reserve, and manage parking spaces while enabling parking operators to monitor facilities.")
 

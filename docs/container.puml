@@ -56,7 +56,7 @@ System_Ext(payment_gateway, "External Payment Gateway", "Processes card payments
 
 System_Ext(notification_provider, "Notification Provider", "Sends SMS and email notifications.")
 
-System_Ext(parking_sensors, "Parking Sensors / IoT System", "Reports real-time parking space occupancy.")
+Person(parking_sensors, "Parking Sensors / IoT System", "Reports real-time parking space occupancy.")
 
 System_Ext(mapping_service, "Mapping Service", "Provides maps, location information, and navigation.")
 
