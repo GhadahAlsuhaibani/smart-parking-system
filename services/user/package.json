@@ -1,0 +1,13 @@
+{
+  "name": "smart-parking-user-service",
+  "version": "1.0.0",
+  "description": "User Service for the Smart Parking Management System",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.21.2"
+  }
+}
