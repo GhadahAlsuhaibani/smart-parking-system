@@ -1,0 +1,229 @@
+# A hash sign starts a comment in YAML. PlantUML is not needed for this file.
+# OpenAPI describes the HTTP endpoints exposed by one backend service.
+openapi: 3.0.3
+
+# Information shown in tools such as Swagger Editor.
+info:
+  title: Smart Parking - Reservation Service API
+  version: 1.0.0
+  description: Creates, lists, cancels and marks parking reservations paid.
+
+# Direct port of this service. The API Gateway also forwards these paths on port 3000.
+servers:
+  - url: http://localhost:3003
+    description: Service running locally
+  # Resource endpoints are also accessible via the API Gateway at http://localhost:3000.
+  # Note: /health on port 3000 belongs to the gateway, not this service.
+
+# Each path represents an HTTP endpoint implemented in server.js.
+paths:
+  # Monitoring can call this endpoint to check whether the service is running.
+  /health:
+    get:
+      operationId: getHealth
+      summary: Check service health
+      responses:
+        "200":
+          description: The service is running
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [status, service]
+                properties:
+                  status:
+                    type: string
+                    example: ok
+                  service:
+                    type: string
+                    example: reservation
+  /reservations:
+    get:
+      operationId: listReservations
+      summary: List all reservations
+      responses:
+        "200":
+          description: All reservations
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Reservation'
+    # Creating a reservation calls the User and Parking services.
+    post:
+      operationId: createReservation
+      summary: Reserve an available parking space
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [userId, spaceId, hours]
+              properties:
+                userId:
+                  type: integer
+                  example: 1
+                spaceId:
+                  type: integer
+                  example: 1
+                hours:
+                  type: integer
+                  minimum: 1
+                  example: 2
+      responses:
+        "201":
+          description: Reservation created, pending payment
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Reservation'
+        "400":
+          description: Invalid request or missing user
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        "404":
+          description: Parking space not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        "409":
+          description: Space already reserved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        "503":
+          description: User or Parking Service unavailable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /reservations/{id}:
+    get:
+      operationId: getReservationById
+      summary: Get a reservation by ID
+      parameters:
+        - $ref: '#/components/parameters/ReservationId'
+      responses:
+        "200":
+          description: Reservation found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Reservation'
+        "404":
+          description: Reservation not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  # Cancelling releases the parking space and is not allowed once paid.
+  /reservations/{id}/cancel:
+    post:
+      operationId: cancelReservation
+      summary: Cancel an unpaid reservation
+      parameters:
+        - $ref: '#/components/parameters/ReservationId'
+      responses:
+        "200":
+          description: Reservation cancelled
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Reservation'
+        "404":
+          description: Reservation not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        "409":
+          description: Reservation already cancelled or paid
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        "503":
+          description: Parking Service cannot release space
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  # Internal demo operation called by Payment Service on payment completion.
+  /reservations/{id}/paid:
+    post:
+      operationId: markReservationPaid
+      summary: Mark a reservation as paid
+      parameters:
+        - $ref: '#/components/parameters/ReservationId'
+      responses:
+        "200":
+          description: Reservation marked paid
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Reservation'
+        "404":
+          description: Reservation not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        "409":
+          description: Reservation not awaiting payment
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+
+# Reusable schemas describe the exact JSON returned by this service.
+components:
+  parameters:
+    ReservationId:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: integer
+        example: 1
+  schemas:
+    Error:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: string
+          example: Not found
+    Reservation:
+      type: object
+      required: [id, userId, spaceId, hours, amount, status]
+      properties:
+        id:
+          type: integer
+          example: 1
+        userId:
+          type: integer
+          example: 1
+        spaceId:
+          type: integer
+          example: 1
+        hours:
+          type: integer
+          example: 2
+        amount:
+          type: number
+          description: Hourly price multiplied by the number of hours, in SAR
+          example: 20
+        status:
+          type: string
+          enum: [pending_payment, paid, cancelled]
+          example: pending_payment

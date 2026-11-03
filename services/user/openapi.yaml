@@ -1,0 +1,147 @@
+# A hash sign starts a comment in YAML. PlantUML is not needed for this file.
+# OpenAPI describes the HTTP endpoints exposed by one backend service.
+openapi: 3.0.3
+
+# Information shown in tools such as Swagger Editor.
+info:
+  title: Smart Parking - User Service API
+  version: 1.0.0
+  description: Registers users and retrieves user information.
+
+# Direct port of this service. The API Gateway also forwards these paths on port 3000.
+servers:
+  - url: http://localhost:3001
+    description: Service running locally
+  # Resource endpoints are also accessible via the API Gateway at http://localhost:3000.
+  # Note: /health on port 3000 belongs to the gateway, not this service.
+
+# Each path represents an HTTP endpoint implemented in server.js.
+paths:
+  # Monitoring can call this endpoint to check whether the service is running.
+  /health:
+    get:
+      operationId: getHealth
+      summary: Check service health
+      responses:
+        "200":
+          description: The service is running
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [status, service]
+                properties:
+                  status:
+                    type: string
+                    example: ok
+                  service:
+                    type: string
+                    example: user
+  # The User Service owns these user records (stored in memory for this lab).
+  /users:
+    get:
+      operationId: listUsers
+      summary: List all users
+      responses:
+        "200":
+          description: Array of registered users
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/User'
+    post:
+      operationId: createUser
+      summary: Register a new user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, email]
+              properties:
+                name:
+                  type: string
+                  example: Ahmed
+                email:
+                  type: string
+                  example: ahmed@example.com
+                role:
+                  type: string
+                  default: driver
+                  example: driver
+      responses:
+        "201":
+          description: User created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        "400":
+          description: Name or email missing
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        "409":
+          description: Email already registered
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  # The id is a numeric user ID, for example 1.
+  /users/{id}:
+    get:
+      operationId: getUserById
+      summary: Get one user
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          example: 1
+      responses:
+        "200":
+          description: User found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        "404":
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+
+# Reusable schemas describe the exact JSON returned by this service.
+components:
+  schemas:
+    Error:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: string
+          example: Not found
+    User:
+      type: object
+      required: [id, name, email, role]
+      properties:
+        id:
+          type: integer
+          example: 1
+        name:
+          type: string
+          example: Sara
+        email:
+          type: string
+          example: sara@example.com
+        role:
+          type: string
+          example: driver
