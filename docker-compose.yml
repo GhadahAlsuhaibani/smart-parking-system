@@ -1,0 +1,62 @@
+services:
+  user-service:
+    build:
+      context: .
+      dockerfile: services/user/Dockerfile
+    environment:
+      PORT: 3001
+    ports:
+      - "3001:3001"
+
+  parking-service:
+    build:
+      context: .
+      dockerfile: services/parking/Dockerfile
+    environment:
+      PORT: 3002
+    ports:
+      - "3002:3002"
+
+  reservation-service:
+    build:
+      context: .
+      dockerfile: services/reservation/Dockerfile
+    environment:
+      PORT: 3003
+      USER_URL: http://user-service:3001
+      PARKING_URL: http://parking-service:3002
+    depends_on:
+      - user-service
+      - parking-service
+    ports:
+      - "3003:3003"
+
+  payment-service:
+    build:
+      context: .
+      dockerfile: services/payment/Dockerfile
+    environment:
+      PORT: 3004
+      RESERVATION_URL: http://reservation-service:3003
+    depends_on:
+      - reservation-service
+    ports:
+      - "3004:3004"
+
+  api-gateway:
+    build:
+      context: .
+      dockerfile: api-gateway/Dockerfile
+    environment:
+      PORT: 3000
+      USER_URL: http://user-service:3001
+      PARKING_URL: http://parking-service:3002
+      RESERVATION_URL: http://reservation-service:3003
+      PAYMENT_URL: http://payment-service:3004
+    depends_on:
+      - user-service
+      - parking-service
+      - reservation-service
+      - payment-service
+    ports:
+      - "3000:3000"
