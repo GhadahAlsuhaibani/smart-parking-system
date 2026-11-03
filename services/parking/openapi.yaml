@@ -1,0 +1,206 @@
+# A hash sign starts a comment in YAML. PlantUML is not needed for this file.
+# OpenAPI describes the HTTP endpoints exposed by one backend service.
+openapi: 3.0.3
+
+# Information shown in tools such as Swagger Editor.
+info:
+  title: Smart Parking - Parking Service API
+  version: 1.0.0
+  description: Lists spaces, creates spaces, and marks spaces reserved or available.
+
+# Direct port of this service. The API Gateway also forwards these paths on port 3000.
+servers:
+  - url: http://localhost:3002
+    description: Service running locally
+  # Resource endpoints are also accessible via the API Gateway at http://localhost:3000.
+  # Note: /health on port 3000 belongs to the gateway, not this service.
+
+# Each path represents an HTTP endpoint implemented in server.js.
+paths:
+  # Monitoring can call this endpoint to check whether the service is running.
+  /health:
+    get:
+      operationId: getHealth
+      summary: Check service health
+      responses:
+        "200":
+          description: The service is running
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [status, service]
+                properties:
+                  status:
+                    type: string
+                    example: ok
+                  service:
+                    type: string
+                    example: parking
+  # Parking Service owns its parking spaces and availability states.
+  /spaces:
+    get:
+      operationId: listSpaces
+      summary: List all parking spaces
+      responses:
+        "200":
+          description: All parking spaces
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Space'
+    post:
+      operationId: createSpace
+      summary: Add a parking space
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [location, pricePerHour]
+              properties:
+                location:
+                  type: string
+                  example: Riyadh Mall
+                pricePerHour:
+                  type: number
+                  minimum: 0
+                  example: 10
+      responses:
+        "201":
+          description: Space created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Space'
+        "400":
+          description: Invalid location or hourly price
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  # Static route /spaces/available is checked before /spaces/{id} in Express.
+  /spaces/available:
+    get:
+      operationId: listAvailableSpaces
+      summary: List currently available spaces
+      responses:
+        "200":
+          description: Spaces with available status
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Space'
+
+  /spaces/{id}:
+    get:
+      operationId: getSpaceById
+      summary: Get one parking space
+      parameters:
+        - $ref: '#/components/parameters/SpaceId'
+      responses:
+        "200":
+          description: Parking space found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Space'
+        "404":
+          description: Space not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  # Internal demo operation used by Reservation Service to claim a space.
+  /spaces/{id}/reserve:
+    post:
+      operationId: reserveSpace
+      summary: Mark a space as reserved
+      parameters:
+        - $ref: '#/components/parameters/SpaceId'
+      responses:
+        "200":
+          description: Space reserved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Space'
+        "404":
+          description: Space not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        "409":
+          description: Space already reserved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  # Internal demo operation used when an unpaid reservation is cancelled.
+  /spaces/{id}/release:
+    post:
+      operationId: releaseSpace
+      summary: Mark a space as available
+      parameters:
+        - $ref: '#/components/parameters/SpaceId'
+      responses:
+        "200":
+          description: Space released
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Space'
+        "404":
+          description: Space not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+
+# Reusable schemas describe the exact JSON returned by this service.
+components:
+  parameters:
+    SpaceId:
+      name: id
+      in: path
+      required: true
+      description: Numeric parking space ID
+      schema:
+        type: integer
+        example: 1
+  schemas:
+    Error:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: string
+          example: Not found
+    Space:
+      type: object
+      required: [id, location, pricePerHour, status]
+      properties:
+        id:
+          type: integer
+          example: 1
+        location:
+          type: string
+          example: Riyadh Mall
+        pricePerHour:
+          type: number
+          description: Cost per hour in SAR
+          example: 10
+        status:
+          type: string
+          enum: [available, reserved]
+          example: available

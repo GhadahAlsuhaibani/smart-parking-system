@@ -1,0 +1,133 @@
+# A hash sign starts a comment in YAML. PlantUML is not needed for this file.
+# OpenAPI describes the HTTP endpoints exposed by one backend service.
+openapi: 3.0.3
+
+# Information shown in tools such as Swagger Editor.
+info:
+  title: Smart Parking - Payment Service API
+  version: 1.0.0
+  description: Simulates payments for pending parking reservations.
+
+# Direct port of this service. The API Gateway also forwards these paths on port 3000.
+servers:
+  - url: http://localhost:3004
+    description: Service running locally
+  # Resource endpoints are also accessible via the API Gateway at http://localhost:3000.
+  # Note: /health on port 3000 belongs to the gateway, not this service.
+
+# Each path represents an HTTP endpoint implemented in server.js.
+paths:
+  # Monitoring can call this endpoint to check whether the service is running.
+  /health:
+    get:
+      operationId: getHealth
+      summary: Check service health
+      responses:
+        "200":
+          description: The service is running
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [status, service]
+                properties:
+                  status:
+                    type: string
+                    example: ok
+                  service:
+                    type: string
+                    example: payment
+  # Payment Service stores simple simulated payments, without card details.
+  /payments:
+    get:
+      operationId: listPayments
+      summary: List simulated payments
+      responses:
+        "200":
+          description: All recorded payments
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Payment'
+    post:
+      operationId: payReservation
+      summary: Simulate payment for a pending reservation
+      description: Checks Reservation Service and marks the reservation paid. No real money moves.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [reservationId]
+              properties:
+                reservationId:
+                  type: integer
+                  example: 1
+      responses:
+        "201":
+          description: Simulated payment created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Payment'
+        "400":
+          description: reservationId must be an integer
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        "404":
+          description: Reservation not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        "409":
+          description: Reservation is not pending payment or cannot be marked paid
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        "503":
+          description: Reservation Service unavailable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+
+# Reusable schemas describe the exact JSON returned by this service.
+components:
+  schemas:
+    Error:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: string
+          example: Not found
+    Payment:
+      type: object
+      required: [id, reservationId, amount, status, method]
+      properties:
+        id:
+          type: integer
+          example: 1
+        reservationId:
+          type: integer
+          example: 1
+        amount:
+          type: number
+          description: Simulated amount paid in SAR
+          example: 20
+        status:
+          type: string
+          enum: [paid]
+          example: paid
+        method:
+          type: string
+          enum: [simulated]
+          example: simulated
