@@ -1,7 +1,7 @@
 # Smart Parking demo. Needs the "REST Client" extension in VS Code.
 # Click "Send Request" above each request, top to bottom, on a fresh start.
 
-@gw = http://localhost:3000
+@gw = http://localhost:8000
 
 ### 1. Gateway is up
 GET {{gw}}/health
