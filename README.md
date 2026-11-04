@@ -104,6 +104,8 @@ curl -X POST http://localhost:3000/reservations/2/cancel
 
 All applications have `GET /health`.
 
+`POST /spaces/:id/reserve`, `POST /spaces/:id/release` and `POST /reservations/:id/paid` are internal: services call them on each other directly, and the gateway refuses them with `403`.
+
 ## Limitations
 
 For **course demonstrations only**: no authentication, data persistence, physical sensors, actual payment processing, time-slot availability, or distributed transactions. Internal service operations are not secured and must not be exposed on the public internet. Parking claims are atomic only within one single Node.js process, not across multiple replicas. This starter is intentionally simpler than the full C4 architecture and ADRs.
