@@ -1,0 +1,94 @@
+# Smart Parking demo. Needs the "REST Client" extension in VS Code.
+# Click "Send Request" above each request, top to bottom, on a fresh start.
+
+@gw = http://localhost:3000
+
+### 1. Gateway is up
+GET {{gw}}/health
+
+### 2. Users: list the sample user
+GET {{gw}}/users
+
+### 3. Users: register a new driver (gets id 2)
+POST {{gw}}/users
+Content-Type: application/json
+
+{ "name": "Ali", "email": "ali@example.com" }
+
+### 4. Users: same email again is rejected (409)
+POST {{gw}}/users
+Content-Type: application/json
+
+{ "name": "Copy", "email": "ali@example.com" }
+
+### 5. Parking: list all spaces
+GET {{gw}}/spaces
+
+### 6. Parking: admin adds a new space (gets id 4)
+POST {{gw}}/spaces
+Content-Type: application/json
+
+{ "location": "Airport", "pricePerHour": 15 }
+
+### 7. Parking: only available spaces
+GET {{gw}}/spaces/available
+
+### 8. Reservation: Sara books space 1 for 2 hours (amount 20)
+POST {{gw}}/reservations
+Content-Type: application/json
+
+{ "userId": 1, "spaceId": 1, "hours": 2 }
+
+### 9. Reservation: Ali tries the same space, double booking is blocked (409)
+POST {{gw}}/reservations
+Content-Type: application/json
+
+{ "userId": 2, "spaceId": 1, "hours": 1 }
+
+### 10. Parking: space 1 is no longer available
+GET {{gw}}/spaces/available
+
+### 11. Payment: pay reservation 1
+POST {{gw}}/payments
+Content-Type: application/json
+
+{ "reservationId": 1 }
+
+### 12. Payment: paying twice is rejected (409)
+POST {{gw}}/payments
+Content-Type: application/json
+
+{ "reservationId": 1 }
+
+### 13. Reservation 1 is now "paid"
+GET {{gw}}/reservations/1
+
+### 14. Reservation: Ali books space 2 for 3 hours (reservation 2)
+POST {{gw}}/reservations
+Content-Type: application/json
+
+{ "userId": 2, "spaceId": 2, "hours": 3 }
+
+### 15. Reservation: cancel reservation 2
+POST {{gw}}/reservations/2/cancel
+
+### 16. Parking: space 2 is available again
+GET {{gw}}/spaces/available
+
+### 17. Reservation: a paid reservation cannot be cancelled (409)
+POST {{gw}}/reservations/1/cancel
+
+### 18. Security: marking paid without paying is blocked at the gateway (403)
+POST {{gw}}/reservations/2/paid
+
+### 19. Security: freeing someone's space is blocked at the gateway (403)
+POST {{gw}}/spaces/1/release
+
+### 20. Gateway: unknown route (404)
+GET {{gw}}/hello
+
+### 21. All payments
+GET {{gw}}/payments
+
+### 22. Resilience: run "docker compose stop parking-service" first, then send this (502)
+GET {{gw}}/spaces
