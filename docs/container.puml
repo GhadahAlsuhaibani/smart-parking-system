@@ -1,5 +1,5 @@
 ' Smart Parking Management System - Container Diagram
-@startuml containers
+@startuml container
 
 ' Load the C4 shapes for a Level 2 container diagram.
 !include <C4/C4_Container>
