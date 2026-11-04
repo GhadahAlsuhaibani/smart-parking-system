@@ -61,6 +61,16 @@ npm start
 
 The gateway is at `http://localhost:3000`. The services use ports 3001–3004.
 
+Or start everything with Docker in one command:
+
+```bash
+docker compose up --build
+```
+
+## Demo in VS Code
+
+Install the **REST Client** extension, start the system, open `demo.http` and click **Send Request** above each request from 1 to 22, in order. Each request says what result to expect.
+
 ## Try the API
 
 List available parking:
@@ -103,6 +113,8 @@ curl -X POST http://localhost:3000/reservations/2/cancel
 | Payment | `GET /payments`, `POST /payments` |
 
 All applications have `GET /health`.
+
+`POST /spaces/:id/reserve`, `POST /spaces/:id/release` and `POST /reservations/:id/paid` are internal: services call them on each other directly, and the gateway refuses them with `403`.
 
 ## Limitations
 

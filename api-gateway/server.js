@@ -8,9 +8,12 @@ const routes = {
   '/reservations': process.env.RESERVATION_URL || 'http://localhost:3003',
   '/payments': process.env.PAYMENT_URL || 'http://localhost:3004'
 };
+// Internal operations that services call on each other; never exposed to clients.
+const internalRoutes = [/^\/spaces\/[^/]+\/(reserve|release)\/?$/i, /^\/reservations\/[^/]+\/paid\/?$/i];
 
 app.get('/health', (req, res) => res.json({ status: 'ok', service: 'gateway' }));
 app.use(async (req, res) => {
+  if (internalRoutes.some(r => r.test(req.path))) return res.status(403).json({ error: 'Internal route not available through the gateway' });
   const prefix = Object.keys(routes).find(p => req.path === p || req.path.startsWith(p + '/'));
   if (!prefix) return res.status(404).json({ error: 'Unknown API route' });
   try {
