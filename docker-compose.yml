@@ -54,5 +54,52 @@ services:
       - parking-service
       - reservation-service
       - payment-service
+      - gateway-exporter
     restart: unless-stopped
 
+  # Monitoring: nginx sends one log line per request here; this turns them into
+  # request counts and timings for Prometheus (the SLO is measured at the gateway).
+  gateway-exporter:
+    image: quay.io/martinhelmich/prometheus-nginxlog-exporter:v1.11.0
+    command: ["-config-file", "/etc/prometheus-nginxlog-exporter.yml"]
+    volumes:
+      - ./monitoring/nginxlog-exporter.yml:/etc/prometheus-nginxlog-exporter.yml:ro
+
+  # Monitoring: Prometheus collects /metrics from every app (http://localhost:9090).
+  prometheus:
+    image: prom/prometheus:v2.54.1
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    depends_on:
+      - api-gateway
+    ports:
+      - "9090:9090"
+
+  # Monitoring: Grafana shows the numbers as a dashboard (http://localhost:3030, no login).
+  grafana:
+    image: grafana/grafana:11.2.0
+    environment:
+      GF_AUTH_ANONYMOUS_ENABLED: "true"
+      GF_AUTH_ANONYMOUS_ORG_ROLE: Admin
+      GF_AUTH_DISABLE_LOGIN_FORM: "true"
+      GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH: /var/lib/grafana/dashboards/smart-parking.json
+    volumes:
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./monitoring/grafana/dashboards:/var/lib/grafana/dashboards:ro
+    depends_on:
+      - prometheus
+    ports:
+      - "3030:3000"
+
+  # Load test, started by hand only: docker compose run --rm k6
+  k6:
+    image: grafana/k6:0.54.0
+    profiles:
+      - load
+    environment:
+      BASE_URL: http://api-gateway
+    volumes:
+      - ./load:/scripts:ro
+    command: run /scripts/parking-load.js
+    depends_on:
+      - api-gateway

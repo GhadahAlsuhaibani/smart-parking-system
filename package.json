@@ -3,11 +3,13 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "start": "node api-gateway/server.js",
     "start:users": "node services/user/server.js",
     "start:parking": "node services/parking/server.js",
     "start:reservations": "node services/reservation/server.js",
     "start:payments": "node services/payment/server.js"
   },
-  "dependencies": { "express": "^4.21.2" }
+  "dependencies": {
+    "express": "^4.21.2",
+    "prom-client": "^15.1.3"
+  }
 }

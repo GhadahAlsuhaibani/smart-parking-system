@@ -34,38 +34,26 @@ Frontend ──► Gateway ──┬──► User
 | `services/parking/` | Parking service: lots, spots and availability |
 | `services/reservation/` | Reservation service: booking and cancelling spots |
 | `services/payment/` | Payment service: charging for reservations |
-| `load/` | Load tests |
+| `load/` | k6 load tests |
+| `lib/` | Shared code: request metrics for every app |
+| `monitoring/` | Prometheus and Grafana configuration and dashboard |
 
 
 # Smart Parking Backend (Simple Lab Version)
 
-Node.js + Express, four services and a small JavaScript API gateway. Data is kept in memory, so it resets on restart. No frontend or database.
+Node.js + Express, four services behind an nginx API gateway. Data is kept in memory, so it resets on restart. No frontend or database.
 
 ## Start
 
-Requires Node.js 18+ (Node.js 20+ recommended).
-
-```bash
-npm install
-```
-
-Open **five terminals** in this folder and run one command per terminal:
-
-```bash
-npm run start:users
-npm run start:parking
-npm run start:reservations
-npm run start:payments
-npm start
-```
-
-The gateway is at `http://localhost:3000`. The services use ports 3001–3004.
-
-Or start everything with Docker in one command:
+Requires Docker Desktop. Start everything with one command:
 
 ```bash
 docker compose up --build
 ```
+
+The gateway is at `http://localhost:8000`. The services use ports 3001–3004.
+
+To work on one service without Docker, run `npm install` once, then `npm run start:users` (or `start:parking`, `start:reservations`, `start:payments`) and call it on its own port. The gateway needs Docker.
 
 ## Demo in VS Code
 
@@ -76,31 +64,31 @@ Install the **REST Client** extension, start the system, open `demo.http` and cl
 List available parking:
 
 ```bash
-curl http://localhost:3000/spaces/available
+curl http://localhost:8000/spaces/available
 ```
 
 Create a reservation for sample user 1 and space 1:
 
 ```bash
-curl -X POST http://localhost:3000/reservations -H 'Content-Type: application/json' -d '{"userId":1,"spaceId":1,"hours":2}'
+curl -X POST http://localhost:8000/reservations -H 'Content-Type: application/json' -d '{"userId":1,"spaceId":1,"hours":2}'
 ```
 
 Pay reservation 1 (simulated):
 
 ```bash
-curl -X POST http://localhost:3000/payments -H 'Content-Type: application/json' -d '{"reservationId":1}'
+curl -X POST http://localhost:8000/payments -H 'Content-Type: application/json' -d '{"reservationId":1}'
 ```
 
 See reservations:
 
 ```bash
-curl http://localhost:3000/reservations
+curl http://localhost:8000/reservations
 ```
 
 To demonstrate cancellation, create another reservation (e.g. space 2), then call:
 
 ```bash
-curl -X POST http://localhost:3000/reservations/2/cancel
+curl -X POST http://localhost:8000/reservations/2/cancel
 ```
 
 ## Routes
@@ -112,9 +100,53 @@ curl -X POST http://localhost:3000/reservations/2/cancel
 | Reservation | `GET /reservations`, `GET /reservations/:id`, `POST /reservations`, `POST /reservations/:id/cancel`, `POST /reservations/:id/paid` |
 | Payment | `GET /payments`, `POST /payments` |
 
-All applications have `GET /health`.
+The gateway and every service have `GET /health`. Every service also has `GET /metrics` (request counts and timings for Prometheus).
 
 `POST /spaces/:id/reserve`, `POST /spaces/:id/release` and `POST /reservations/:id/paid` are internal: services call them on each other directly, and the gateway refuses them with `403`.
+
+## Monitoring
+
+`docker compose up --build` also starts the monitoring tools:
+
+| Tool | Address | What it does |
+|---|---|---|
+| Prometheus | http://localhost:9090 | Reads `/metrics` from every service every 5 seconds |
+| gateway-exporter | (internal) | nginx cannot serve `/metrics`, so it sends one log line per request here, and this turns them into gateway metrics |
+| Grafana | http://localhost:3030 | Dashboard "Smart Parking - Service Health and SLO" (opens directly, no login) |
+
+The dashboard tracks the SLO in `docs/slo/slo.md` at the gateway: the share of good requests (status below 500, under 500 ms), p95 response time, the 5xx error rate, whether each app is up, and traffic and speed per app.
+
+To see a failure on the dashboard, stop a service, send a few requests, and watch it turn `DOWN` and the 503 errors appear:
+
+```bash
+docker compose stop parking-service
+docker compose start parking-service
+```
+
+## When a service is down (timeout and circuit breaker)
+
+Without limits, a stopped container made every caller wait about 4 seconds, because Docker takes that long to report that the name does not exist.
+
+- **Gateway (nginx):** gives up after 1 second if it cannot connect to a service, or 2.5 seconds if the service does not answer, and returns `503`.
+- **Between services** (`lib/call-service.js`): a 1-second timeout, plus a **circuit breaker**: after 3 failures in a row to the same service, calls to it fail at once for 10 seconds, then one call is let through to test it again.
+
+To see it:
+
+```bash
+docker compose stop parking-service
+```
+
+Call `GET /spaces` through the gateway: it answers `503` after 1 second. Send `POST /reservations` 4 times: the first 3 answer `503` after 1 second, the fourth in a few milliseconds, and `docker compose logs reservation-service` shows `Circuit opened`. Start the service again, and about 10 seconds later bookings work normally.
+
+## Load test (k6)
+
+With the system running, open a second terminal and run:
+
+```bash
+docker compose run --rm k6
+```
+
+The test in `load/parking-load.js` takes 80 seconds. It ramps up to 10 drivers, holds, then rises to 30 drivers. Each driver lists available spaces, registers, books a space for 2 hours, and then either pays or cancels. It passes only if it meets the SLO release target: p95 under 500 ms, fewer than 1% failed requests, and more than 99% of checks passing. Watch the Grafana dashboard while it runs.
 
 ## Limitations
 

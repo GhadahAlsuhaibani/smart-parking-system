@@ -1,0 +1,31 @@
+# Turns the gateway's (nginx) access log into Prometheus metrics at http://gateway-exporter:4040/metrics.
+listen:
+  port: 4040
+  address: "0.0.0.0"
+
+namespaces:
+  - name: gateway
+    # Must match log_format "metrics" in gateway/nginx.conf.
+    format: '"$request" $status $request_time'
+    source:
+      syslog:
+        listen_address: "udp://0.0.0.0:5531"
+        format: "rfc3164"
+        tags: ["nginx"]
+    # 0.5 is a bucket edge so Grafana can count requests that meet the 500 ms SLO.
+    histogram_buckets: [0.01, 0.05, 0.1, 0.25, 0.5, 1, 2.5, 5]
+    relabel_configs:
+      # Use the route pattern (/spaces/:id), not the real id, so the number of series stays small.
+      - target_label: route
+        from: request
+        # $request is "GET /spaces/1 HTTP/1.1"; the second word is the path.
+        split: 2
+        matches:
+          - regexp: "^/(\\w+)/\\d+/(\\w+)$"
+            replacement: "/$1/:id/$2"
+          - regexp: "^/(\\w+)/\\d+$"
+            replacement: "/$1/:id"
+          - regexp: "^/(\\w+(/available)?)$"
+            replacement: "/$1"
+          - regexp: ".*"
+            replacement: "other"

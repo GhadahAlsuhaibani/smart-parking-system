@@ -1,6 +1,7 @@
 // User Service: stores sample users in memory (data resets after restart).
 const express = require('express');
 const app = express();
+require('../../lib/metrics')(app);
 app.use(express.json());
 const PORT = process.env.PORT || 3001;
 const users = [{ id: 1, name: 'Sara', email: 'sara@example.com', role: 'driver' }];

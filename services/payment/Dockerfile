@@ -9,10 +9,11 @@ COPY package*.json ./
 RUN npm install --omit=dev
 
 # Copy this microservice's JavaScript file.
-COPY services/payment/server.js ./server.js
+COPY lib ./lib
+COPY services/payment/server.js ./services/payment/server.js
 
 # Expose the port used by this service.
 EXPOSE 3004
 
 # Start the service.
-CMD ["node", "server.js"]
+CMD ["node", "services/payment/server.js"]
