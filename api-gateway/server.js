@@ -1,5 +1,6 @@
 // A simple API Gateway: forwards incoming requests to the right service.
 const express = require('express');
+const callService = require('../lib/call-service');
 const app = express();
 require('../lib/metrics')(app);
 const PORT = process.env.PORT || 3000;
@@ -11,6 +12,8 @@ const routes = {
 };
 // Internal operations that services call on each other; never exposed to clients.
 const internalRoutes = [/^\/spaces\/[^/]+\/(reserve|release)\/?$/i, /^\/reservations\/[^/]+\/paid\/?$/i];
+// Longer than two 1-second calls between services, so a slow downstream app is not blamed on its caller.
+const TIMEOUT_MS = 2500;
 
 app.get('/health', (req, res) => res.json({ status: 'ok', service: 'gateway' }));
 app.use(async (req, res) => {
@@ -20,17 +23,17 @@ app.use(async (req, res) => {
   try {
     const target = routes[prefix] + req.originalUrl;
     const headers = { 'content-type': req.headers['content-type'] || 'application/json' };
-    const response = await fetch(target, {
+    const response = await callService(target, {
       method: req.method,
       headers,
       body: ['GET', 'HEAD'].includes(req.method) ? undefined : req,
-      duplex: ['GET', 'HEAD'].includes(req.method) ? undefined : 'half',
-      signal: AbortSignal.timeout(5000)
-    });
+      duplex: ['GET', 'HEAD'].includes(req.method) ? undefined : 'half'
+    }, TIMEOUT_MS);
     res.status(response.status);
     res.setHeader('content-type', response.headers.get('content-type') || 'application/json');
     res.send(await response.text());
   } catch (error) {
+    if (error.circuitOpen) return res.status(503).json({ error: 'Backend service unavailable, try again shortly' });
     res.status(502).json({ error: 'Backend service unavailable' });
   }
 });

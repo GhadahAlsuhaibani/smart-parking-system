@@ -1,5 +1,6 @@
 // Payment Service: simulates payment (no bank or real card details involved).
 const express = require('express');
+const callService = require('../../lib/call-service');
 const app = express();
 require('../../lib/metrics')(app);
 app.use(express.json());
@@ -14,11 +15,11 @@ app.post('/payments', async (req, res) => {
   const { reservationId } = req.body;
   if (!Number.isInteger(reservationId)) return res.status(400).json({ error: 'reservationId is required' });
   try {
-    const check = await fetch(`${RESERVATION_URL}/reservations/${reservationId}`);
+    const check = await callService(`${RESERVATION_URL}/reservations/${reservationId}`);
     if (!check.ok) return res.status(404).json({ error: 'Reservation not found' });
     const reservation = await check.json();
     if (reservation.status !== 'pending_payment') return res.status(409).json({ error: 'Reservation is not awaiting payment' });
-    const update = await fetch(`${RESERVATION_URL}/reservations/${reservationId}/paid`, { method: 'POST' });
+    const update = await callService(`${RESERVATION_URL}/reservations/${reservationId}/paid`, { method: 'POST' });
     if (!update.ok) return res.status(409).json({ error: 'Payment could not be completed' });
     const payment = { id: nextId++, reservationId, amount: reservation.amount, status: 'paid', method: 'simulated' };
     payments.push(payment);

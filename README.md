@@ -136,6 +136,21 @@ docker compose stop parking-service
 docker compose start parking-service
 ```
 
+## When a service is down (timeout and circuit breaker)
+
+Every call between apps goes through `lib/call-service.js`:
+
+- **Timeout:** the gateway gives a service 2.5 seconds; a service gives another service 1 second.
+- **Circuit breaker:** after 3 failures in a row to the same service, calls to it fail at once for 10 seconds, then one call is let through to test it again.
+
+Without this, a stopped container made every caller wait about 4 seconds, because Docker takes that long to report that the name does not exist. To see it:
+
+```bash
+docker compose stop parking-service
+```
+
+Call `GET /spaces` through the gateway 5 times: the first 3 answer `502` after 2.5 seconds, then `503` in a few milliseconds. `docker compose logs api-gateway` shows `Circuit opened`. Start the service again, and about 10 seconds later requests work normally.
+
 ## Load test (k6)
 
 With the system running, open a second terminal and run:

@@ -9,7 +9,7 @@ COPY package*.json ./
 RUN npm install --omit=dev
 
 # Copy this microservice's JavaScript file.
-COPY lib/metrics.js ./lib/metrics.js
+COPY lib ./lib
 COPY services/reservation/server.js ./services/reservation/server.js
 
 # Expose the port used by this service.
