@@ -34,7 +34,9 @@ Frontend ──► Gateway ──┬──► User
 | `services/parking/` | Parking service: lots, spots and availability |
 | `services/reservation/` | Reservation service: booking and cancelling spots |
 | `services/payment/` | Payment service: charging for reservations |
-| `load/` | Load tests |
+| `load/` | k6 load tests |
+| `lib/` | Shared code: request metrics for every app |
+| `monitoring/` | Prometheus and Grafana configuration and dashboard |
 
 
 # Smart Parking Backend (Simple Lab Version)
@@ -112,9 +114,37 @@ curl -X POST http://localhost:3000/reservations/2/cancel
 | Reservation | `GET /reservations`, `GET /reservations/:id`, `POST /reservations`, `POST /reservations/:id/cancel`, `POST /reservations/:id/paid` |
 | Payment | `GET /payments`, `POST /payments` |
 
-All applications have `GET /health`.
+All applications have `GET /health` and `GET /metrics` (request counts and timings for Prometheus).
 
 `POST /spaces/:id/reserve`, `POST /spaces/:id/release` and `POST /reservations/:id/paid` are internal: services call them on each other directly, and the gateway refuses them with `403`.
+
+## Monitoring
+
+`docker compose up --build` also starts the monitoring tools:
+
+| Tool | Address | What it does |
+|---|---|---|
+| Prometheus | http://localhost:9090 | Reads `/metrics` from every app every 5 seconds |
+| Grafana | http://localhost:3030 | Dashboard "Smart Parking - Service Health and SLO" (opens directly, no login) |
+
+The dashboard tracks the SLO in `docs/slo/slo.md` at the gateway: the share of good requests (status below 500, under 500 ms), p95 response time, the 5xx error rate, whether each app is up, and traffic and speed per app.
+
+To see a failure on the dashboard, stop a service, send a few requests, and watch it turn `DOWN` and the 502 errors appear:
+
+```bash
+docker compose stop parking-service
+docker compose start parking-service
+```
+
+## Load test (k6)
+
+With the system running, open a second terminal and run:
+
+```bash
+docker compose run --rm k6
+```
+
+The test in `load/parking-load.js` takes 80 seconds. It ramps up to 10 drivers, holds, then rises to 30 drivers. Each driver lists available spaces, registers, books a space for 2 hours, and then either pays or cancels. It passes only if it meets the SLO release target: p95 under 500 ms, fewer than 1% failed requests, and more than 99% of checks passing. Watch the Grafana dashboard while it runs.
 
 ## Limitations
 

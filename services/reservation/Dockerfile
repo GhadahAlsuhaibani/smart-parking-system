@@ -9,10 +9,11 @@ COPY package*.json ./
 RUN npm install --omit=dev
 
 # Copy this microservice's JavaScript file.
-COPY services/reservation/server.js ./server.js
+COPY lib/metrics.js ./lib/metrics.js
+COPY services/reservation/server.js ./services/reservation/server.js
 
 # Expose the port used by this service.
 EXPOSE 3003
 
 # Start the service.
-CMD ["node", "server.js"]
+CMD ["node", "services/reservation/server.js"]

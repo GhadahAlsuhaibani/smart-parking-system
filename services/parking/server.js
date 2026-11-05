@@ -1,6 +1,7 @@
 // Parking Service: owns the parking-space data. No other service edits this array.
 const express = require('express');
 const app = express();
+require('../../lib/metrics')(app);
 app.use(express.json());
 const PORT = process.env.PORT || 3002;
 const spaces = [

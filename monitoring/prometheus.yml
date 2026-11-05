@@ -1,0 +1,25 @@
+# Prometheus reads GET /metrics from every app every 5 seconds and keeps the numbers.
+global:
+  scrape_interval: 5s
+
+scrape_configs:
+  # The gateway is where the SLO is measured: it sees what users see.
+  - job_name: gateway
+    static_configs:
+      - targets: ['api-gateway:3000']
+
+  - job_name: user
+    static_configs:
+      - targets: ['user-service:3001']
+
+  - job_name: parking
+    static_configs:
+      - targets: ['parking-service:3002']
+
+  - job_name: reservation
+    static_configs:
+      - targets: ['reservation-service:3003']
+
+  - job_name: payment
+    static_configs:
+      - targets: ['payment-service:3004']

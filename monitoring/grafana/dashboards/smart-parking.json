@@ -1,0 +1,169 @@
+{
+  "uid": "smart-parking",
+  "title": "Smart Parking - Service Health and SLO",
+  "description": "SLO from docs/slo/slo.md: 99.5% of requests succeed (status below 500) in under 500 ms, measured at the API Gateway.",
+  "editable": true,
+  "refresh": "5s",
+  "schemaVersion": 39,
+  "time": { "from": "now-15m", "to": "now" },
+  "tags": ["smart-parking"],
+  "panels": [
+    {
+      "id": 1,
+      "type": "stat",
+      "title": "SLI: good requests at gateway (target 99.5%)",
+      "description": "Share of gateway requests in the last 5 minutes that returned a status below 500 in under 500 ms.",
+      "gridPos": { "h": 6, "w": 6, "x": 0, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "100 * sum(rate(http_request_duration_seconds_bucket{job=\"gateway\",le=\"0.5\",status!~\"5..\"}[5m])) / sum(rate(http_request_duration_seconds_count{job=\"gateway\"}[5m]))"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "decimals": 2,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "red", "value": null },
+              { "color": "green", "value": 99.5 }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": { "colorMode": "background", "graphMode": "area", "reduceOptions": { "calcs": ["lastNotNull"] } }
+    },
+    {
+      "id": 2,
+      "type": "stat",
+      "title": "p95 response time at gateway (limit 500 ms)",
+      "gridPos": { "h": 6, "w": 6, "x": 6, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "1000 * histogram_quantile(0.95, sum by (le) (rate(http_request_duration_seconds_bucket{job=\"gateway\"}[1m])))"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ms",
+          "decimals": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "red", "value": 500 }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": { "colorMode": "background", "graphMode": "area", "reduceOptions": { "calcs": ["lastNotNull"] } }
+    },
+    {
+      "id": 3,
+      "type": "stat",
+      "title": "Server errors (5xx) at gateway",
+      "gridPos": { "h": 6, "w": 6, "x": 12, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "100 * (sum(rate(http_request_duration_seconds_count{job=\"gateway\",status=~\"5..\"}[1m])) or vector(0)) / sum(rate(http_request_duration_seconds_count{job=\"gateway\"}[1m]))"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "decimals": 2,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "red", "value": 0.5 }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": { "colorMode": "background", "graphMode": "area", "reduceOptions": { "calcs": ["lastNotNull"] } }
+    },
+    {
+      "id": 4,
+      "type": "stat",
+      "title": "Is each app up?",
+      "gridPos": { "h": 6, "w": 6, "x": 18, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [{ "refId": "A", "expr": "up", "legendFormat": "{{job}}" }],
+      "fieldConfig": {
+        "defaults": {
+          "mappings": [
+            { "type": "value", "options": { "0": { "text": "DOWN", "color": "red" }, "1": { "text": "UP", "color": "green" } } }
+          ],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "red", "value": null },
+              { "color": "green", "value": 1 }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": { "colorMode": "background", "graphMode": "none", "textMode": "value_and_name", "reduceOptions": { "calcs": ["lastNotNull"] } }
+    },
+    {
+      "id": 5,
+      "type": "timeseries",
+      "title": "Requests per second, by app",
+      "gridPos": { "h": 9, "w": 12, "x": 0, "y": 6 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        { "refId": "A", "expr": "sum by (job) (rate(http_request_duration_seconds_count[1m]))", "legendFormat": "{{job}}" }
+      ],
+      "fieldConfig": { "defaults": { "unit": "reqps" }, "overrides": [] }
+    },
+    {
+      "id": 6,
+      "type": "timeseries",
+      "title": "p95 response time, by app",
+      "gridPos": { "h": 9, "w": 12, "x": 12, "y": 6 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "1000 * histogram_quantile(0.95, sum by (job, le) (rate(http_request_duration_seconds_bucket[1m])))",
+          "legendFormat": "{{job}}"
+        }
+      ],
+      "fieldConfig": { "defaults": { "unit": "ms" }, "overrides": [] }
+    },
+    {
+      "id": 7,
+      "type": "timeseries",
+      "title": "Gateway responses by status code",
+      "gridPos": { "h": 9, "w": 12, "x": 0, "y": 15 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        { "refId": "A", "expr": "sum by (status) (rate(http_request_duration_seconds_count{job=\"gateway\"}[1m]))", "legendFormat": "{{status}}" }
+      ],
+      "fieldConfig": { "defaults": { "unit": "reqps" }, "overrides": [] }
+    },
+    {
+      "id": 8,
+      "type": "timeseries",
+      "title": "Gateway requests per second, by route",
+      "gridPos": { "h": 9, "w": 12, "x": 12, "y": 15 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        { "refId": "A", "expr": "sum by (method, route) (rate(http_request_duration_seconds_count{job=\"gateway\"}[1m]))", "legendFormat": "{{method}} {{route}}" }
+      ],
+      "fieldConfig": { "defaults": { "unit": "reqps" }, "overrides": [] }
+    }
+  ]
+}

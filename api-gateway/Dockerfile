@@ -9,10 +9,11 @@ COPY package*.json ./
 RUN npm install --omit=dev
 
 # Copy the API Gateway JavaScript file.
-COPY api-gateway/server.js ./server.js
+COPY lib/metrics.js ./lib/metrics.js
+COPY api-gateway/server.js ./api-gateway/server.js
 
 # Expose the Gateway port.
 EXPOSE 3000
 
 # Start the Gateway.
-CMD ["node", "server.js"]
+CMD ["node", "api-gateway/server.js"]

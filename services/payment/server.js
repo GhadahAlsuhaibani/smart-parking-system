@@ -1,6 +1,7 @@
 // Payment Service: simulates payment (no bank or real card details involved).
 const express = require('express');
 const app = express();
+require('../../lib/metrics')(app);
 app.use(express.json());
 const PORT = process.env.PORT || 3004;
 const RESERVATION_URL = process.env.RESERVATION_URL || 'http://localhost:3003';

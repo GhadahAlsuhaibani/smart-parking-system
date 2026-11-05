@@ -1,6 +1,7 @@
 // A simple API Gateway: forwards incoming requests to the right service.
 const express = require('express');
 const app = express();
+require('../lib/metrics')(app);
 const PORT = process.env.PORT || 3000;
 const routes = {
   '/users': process.env.USER_URL || 'http://localhost:3001',

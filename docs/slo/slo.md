@@ -114,8 +114,11 @@ Otherwise, this SLO is considered expired until a new owner is assigned.
  
 ------------------------------------------------------------------------
  
-**Implementation note:** The current backend prototype uses in-memory
-data and does not yet have centralized request-duration logging. This
-SLO is therefore a proposed target, not a measured guarantee. To measure
-it properly, add request timing and status-code logging in the API
-Gateway.
+**Implementation note:** The gateway and every service now record the
+duration and status code of each request (`GET /metrics`, excluding
+health checks). Prometheus collects these numbers and the Grafana
+dashboard "Smart Parking - Service Health and SLO" shows the SLI live.
+The release test target is checked by the k6 script in
+`load/parking-load.js`. Prometheus keeps data only while it runs, so the
+30-day window is not yet measured; the prototype also still uses
+in-memory data.

@@ -1,6 +1,7 @@
 // Reservation Service: calls User and Parking services over HTTP.
 const express = require('express');
 const app = express();
+require('../../lib/metrics')(app);
 app.use(express.json());
 const PORT = process.env.PORT || 3003;
 const USER_URL = process.env.USER_URL || 'http://localhost:3001';
