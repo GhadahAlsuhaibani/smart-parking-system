@@ -44,22 +44,26 @@ services:
       - "3004:3004"
 
   api-gateway:
-    build:
-      context: .
-      dockerfile: api-gateway/Dockerfile
-    environment:
-      PORT: 3000
-      USER_URL: http://user-service:3001
-      PARKING_URL: http://parking-service:3002
-      RESERVATION_URL: http://reservation-service:3003
-      PAYMENT_URL: http://payment-service:3004
+    image: nginx:alpine
+    ports:
+      - "8000:80"
+    volumes:
+      - ./gateway/nginx.conf:/etc/nginx/conf.d/default.conf:ro
     depends_on:
       - user-service
       - parking-service
       - reservation-service
       - payment-service
-    ports:
-      - "3000:3000"
+      - gateway-exporter
+    restart: unless-stopped
+
+  # Monitoring: nginx sends one log line per request here; this turns them into
+  # request counts and timings for Prometheus (the SLO is measured at the gateway).
+  gateway-exporter:
+    image: quay.io/martinhelmich/prometheus-nginxlog-exporter:v1.11.0
+    command: ["-config-file", "/etc/prometheus-nginxlog-exporter.yml"]
+    volumes:
+      - ./monitoring/nginxlog-exporter.yml:/etc/prometheus-nginxlog-exporter.yml:ro
 
   # Monitoring: Prometheus collects /metrics from every app (http://localhost:9090).
   prometheus:
@@ -93,7 +97,7 @@ services:
     profiles:
       - load
     environment:
-      BASE_URL: http://api-gateway:3000
+      BASE_URL: http://api-gateway
     volumes:
       - ./load:/scripts:ro
     command: run /scripts/parking-load.js

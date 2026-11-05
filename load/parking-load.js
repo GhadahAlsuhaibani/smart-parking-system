@@ -4,7 +4,7 @@ import http from "k6/http";
 import { check, sleep } from "k6";
 
 // Inside the Docker network the gateway is called "api-gateway".
-const BASE = __ENV.BASE_URL || "http://localhost:3000";
+const BASE = __ENV.BASE_URL || "http://localhost:8000";
 const JSON_HEADERS = { headers: { "Content-Type": "application/json" } };
 
 export const options = {

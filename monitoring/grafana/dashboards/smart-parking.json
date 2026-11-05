@@ -18,7 +18,7 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "100 * sum(rate(http_request_duration_seconds_bucket{job=\"gateway\",le=\"0.5\",status!~\"5..\"}[5m])) / sum(rate(http_request_duration_seconds_count{job=\"gateway\"}[5m]))"
+          "expr": "100 * sum(rate(gateway_http_response_time_seconds_hist_bucket{job=\"gateway\",le=\"0.5\",status!~\"5..\"}[5m])) / sum(rate(gateway_http_response_time_seconds_hist_count{job=\"gateway\"}[5m]))"
         }
       ],
       "fieldConfig": {
@@ -46,7 +46,7 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "1000 * histogram_quantile(0.95, sum by (le) (rate(http_request_duration_seconds_bucket{job=\"gateway\"}[1m])))"
+          "expr": "1000 * histogram_quantile(0.95, sum by (le) (rate(gateway_http_response_time_seconds_hist_bucket{job=\"gateway\"}[1m])))"
         }
       ],
       "fieldConfig": {
@@ -74,7 +74,7 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "100 * (sum(rate(http_request_duration_seconds_count{job=\"gateway\",status=~\"5..\"}[1m])) or vector(0)) / sum(rate(http_request_duration_seconds_count{job=\"gateway\"}[1m]))"
+          "expr": "100 * (sum(rate(gateway_http_response_time_seconds_hist_count{job=\"gateway\",status=~\"5..\"}[1m])) or vector(0)) / sum(rate(gateway_http_response_time_seconds_hist_count{job=\"gateway\"}[1m]))"
         }
       ],
       "fieldConfig": {
@@ -124,7 +124,7 @@
       "gridPos": { "h": 9, "w": 12, "x": 0, "y": 6 },
       "datasource": { "type": "prometheus", "uid": "prometheus" },
       "targets": [
-        { "refId": "A", "expr": "sum by (job) (rate(http_request_duration_seconds_count[1m]))", "legendFormat": "{{job}}" }
+        { "refId": "A", "expr": "sum by (job) (rate(http_request_duration_seconds_count[1m]) or rate(gateway_http_response_time_seconds_hist_count[1m]))", "legendFormat": "{{job}}" }
       ],
       "fieldConfig": { "defaults": { "unit": "reqps" }, "overrides": [] }
     },
@@ -137,7 +137,7 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "1000 * histogram_quantile(0.95, sum by (job, le) (rate(http_request_duration_seconds_bucket[1m])))",
+          "expr": "1000 * histogram_quantile(0.95, sum by (job, le) (rate(http_request_duration_seconds_bucket[1m]) or rate(gateway_http_response_time_seconds_hist_bucket[1m])))",
           "legendFormat": "{{job}}"
         }
       ],
@@ -150,7 +150,7 @@
       "gridPos": { "h": 9, "w": 12, "x": 0, "y": 15 },
       "datasource": { "type": "prometheus", "uid": "prometheus" },
       "targets": [
-        { "refId": "A", "expr": "sum by (status) (rate(http_request_duration_seconds_count{job=\"gateway\"}[1m]))", "legendFormat": "{{status}}" }
+        { "refId": "A", "expr": "sum by (status) (rate(gateway_http_response_time_seconds_hist_count{job=\"gateway\"}[1m]))", "legendFormat": "{{status}}" }
       ],
       "fieldConfig": { "defaults": { "unit": "reqps" }, "overrides": [] }
     },
@@ -161,7 +161,7 @@
       "gridPos": { "h": 9, "w": 12, "x": 12, "y": 15 },
       "datasource": { "type": "prometheus", "uid": "prometheus" },
       "targets": [
-        { "refId": "A", "expr": "sum by (method, route) (rate(http_request_duration_seconds_count{job=\"gateway\"}[1m]))", "legendFormat": "{{method}} {{route}}" }
+        { "refId": "A", "expr": "sum by (method, route) (rate(gateway_http_response_time_seconds_hist_count{job=\"gateway\"}[1m]))", "legendFormat": "{{method}} {{route}}" }
       ],
       "fieldConfig": { "defaults": { "unit": "reqps" }, "overrides": [] }
     }

@@ -4,9 +4,10 @@ global:
 
 scrape_configs:
   # The gateway is where the SLO is measured: it sees what users see.
+  # nginx cannot serve /metrics itself, so gateway-exporter reads its access log.
   - job_name: gateway
     static_configs:
-      - targets: ['api-gateway:3000']
+      - targets: ['gateway-exporter:4040']
 
   - job_name: user
     static_configs:

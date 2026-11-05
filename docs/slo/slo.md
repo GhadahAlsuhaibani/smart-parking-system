@@ -114,9 +114,10 @@ Otherwise, this SLO is considered expired until a new owner is assigned.
  
 ------------------------------------------------------------------------
  
-**Implementation note:** The gateway and every service now record the
-duration and status code of each request (`GET /metrics`, excluding
-health checks). Prometheus collects these numbers and the Grafana
+**Implementation note:** Every service records the duration and status
+code of each request (`GET /metrics`, excluding health checks), and the
+nginx gateway sends the same data from its access log through
+`gateway-exporter`. Prometheus collects these numbers and the Grafana
 dashboard "Smart Parking - Service Health and SLO" shows the SLI live.
 The release test target is checked by the k6 script in
 `load/parking-load.js`. Prometheus keeps data only while it runs, so the
