@@ -90,5 +90,5 @@ GET {{gw}}/hello
 ### 21. All payments
 GET {{gw}}/payments
 
-### 22. Resilience: run "docker compose stop parking-service" first, then send this (502)
+### 22. Resilience: run "docker compose stop parking-service" first, then send this (503)
 GET {{gw}}/spaces
